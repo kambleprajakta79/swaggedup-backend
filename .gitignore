@@ -1,0 +1,35 @@
+# Dependency directories
+node_modules/
+/backend/node_modules/
+/frontend/node_modules/
+
+# Build outputs
+dist/
+/backend/dist/
+/frontend/dist/
+.angular/
+
+# Environment files
+.env
+
+# Database files
+*.sqlite
+database.sqlite
+
+# IDE files
+.vscode/
+.idea/
+.gemini/
+
+node_modules/
+dist/
+.env
+*.sqlite
+*.db
+coverage/
+*.log
+
+# Database files
+*.sqlite
+database.sqlite
+swaggedup
