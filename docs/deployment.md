@@ -18,18 +18,23 @@ This project deploys as: **backend → Render** (NestJS + MySQL), **frontend →
 
 ---
 
-## Part 2 — Database (do this first)
+## Part 2 — Database (Oracle MySQL HeatWave)
 
-1. Create a **MySQL** database (Railway/Aiven/PlanetScale — pick one, note host/port/user/password/dbname).
-2. **Do NOT set `RUN_SEEDER=true`** in production. Instead, seed once locally against the prod DB:
-   ```bash
-   # from backend/, with .env pointing at the PROD database temporarily
-   npm run migration:run
-   # then start the app once locally with RUN_SEEDER=true to seed admin + catalog,
-   # or insert the admin manually:
-   # INSERT INTO users (email, password, role, isVerified) VALUES (...)
+You're using **Oracle MySQL HeatWave** (OCI) — the app connects to it as plain MySQL (`DB_TYPE=mysql`, `mysql2` driver), so no code changes are needed.
+
+1. In the OCI console, note the **DB System endpoint**:
+   - **Private IP** (e.g. `10.0.1.x`) if the backend runs inside the same VCN — fastest and free of data-egress concerns.
+   - **Public endpoint** (`....mysql.oraclecloud.com`) if the backend is outside OCI — you must enable a public endpoint + allow-list the backend's egress IP in the DB System's network settings (port 3306).
+2. Create a dedicated user for the app (don't use admin):
+   ```sql
+   CREATE USER 'swaggedup_user'@'%' IDENTIFIED BY '<strong-password>';
+   GRANT ALL PRIVILEGES ON swaggedup.* TO 'swaggedup_user'@'%';
+   CREATE DATABASE swaggedup;
    ```
-   Simplest reliable path: run the app locally with `DB_TYPE=mysql` + prod DB creds and `RUN_SEEDER=true` once — migrations auto-apply and the seeder fills admin/categories/products/banners. Then **change the admin password immediately**.
+3. **TLS**: HeatWave DB Systems commonly enforce secure connections. If "Require Secure Client Connections" is enabled, set `DB_SSL=true` in the backend env (supported in `database.module.ts` / `data-source.ts`).
+4. **HeatWave accelerator note**: the HeatWave analytics node is separate from the MySQL endpoint — the app only needs the standard MySQL endpoint on 3306. No HeatWave-specific driver.
+5. Seed once from your machine (see Part 2 of the general flow): point local `.env` at the HeatWave endpoint with `RUN_SEEDER=true`, run the app once, then revert. Migrations auto-apply on backend boot (`migrationsRun: true`).
+6. **Networking gotcha**: if the backend is on Render (outside OCI), you need the DB System's public endpoint + allow-listed IPs, and traffic crosses the internet (TLS strongly recommended). If you later host the backend in the same OCI VCN (e.g. OCI Compute free tier), use the private IP — lower latency and no public exposure.
 
 ---
 

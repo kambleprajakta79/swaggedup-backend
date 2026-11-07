@@ -28,6 +28,8 @@ export const AppDataSource = new DataSource(
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
+        // Optional TLS (set DB_SSL=true for Oracle HeatWave / managed MySQL)
+        ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
         entities,
         migrations: [path.join(__dirname, 'migrations', '*{.ts,.js}')],
         synchronize: false,
