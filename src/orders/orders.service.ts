@@ -7,6 +7,8 @@ import { Product } from '../products/entities/product.entity';
 import { ProductVariant } from '../products/entities/product-variant.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { User } from '../users/entities/user.entity';
+import { MailService } from '../mail/mail.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -22,9 +24,11 @@ export class OrdersService {
     @InjectRepository(ProductVariant)
     private readonly variantRepository: Repository<ProductVariant>,
     private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
+    private readonly whatsappService: WhatsAppService,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto): Promise<Order> {
+  async create(createOrderDto: CreateOrderDto, userId?: number): Promise<Order> {
     // Run order creation inside a transaction to prevent partial state updates
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -65,6 +69,7 @@ export class OrdersService {
       order.paymentMethod = createOrderDto.paymentMethod || 'COD';
       order.status = OrderStatus.PENDING;
       order.paymentStatus = PaymentStatus.PENDING;
+      order.userId = userId ?? null; // Link to logged-in customer when available
 
       let subtotal = 0;
       const orderItems: OrderItem[] = [];
@@ -120,6 +125,15 @@ export class OrdersService {
 
       const savedOrder = await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
+
+      // Notifications (fail-safe, never block the flow)
+      await this.mailService.sendOrderConfirmation(savedOrder);
+      await this.whatsappService.sendOrderPlaced(
+        savedOrder.customerPhone,
+        savedOrder.orderNumber,
+        `INR ${Number(savedOrder.totalAmount).toFixed(2)}`,
+      );
+
       return savedOrder;
     } catch (err) {
       await queryRunner.rollbackTransaction();
@@ -138,6 +152,14 @@ export class OrdersService {
       throw new NotFoundException(`Order with order number "${orderNumber}" not found`);
     }
     return order;
+  }
+
+  async findMine(userId: number): Promise<Order[]> {
+    return this.orderRepository.find({
+      where: { userId },
+      relations: { items: true },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findAll(): Promise<Order[]> {
@@ -187,7 +209,24 @@ export class OrdersService {
     }
 
     order.status = status;
-    return this.orderRepository.save(order);
+    const saved = await this.orderRepository.save(order);
+
+    // Status-change notifications (fail-safe)
+    if (status !== oldStatus) {
+      await this.mailService.sendOrderStatusUpdate({
+        orderNumber: saved.orderNumber,
+        customerName: saved.customerName,
+        customerEmail: saved.customerEmail,
+        status: saved.status,
+      });
+      if (status === OrderStatus.SHIPPED) {
+        await this.whatsappService.sendOrderShipped(saved.customerPhone, saved.orderNumber);
+      } else if (status === OrderStatus.DELIVERED) {
+        await this.whatsappService.sendOrderDelivered(saved.customerPhone, saved.orderNumber);
+      }
+    }
+
+    return saved;
   }
 
   async updatePaymentStatus(id: number, paymentStatus: PaymentStatus): Promise<Order> {

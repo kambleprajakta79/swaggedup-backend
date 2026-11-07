@@ -6,6 +6,9 @@ import { Product } from '../products/entities/product.entity';
 import { ProductVariant } from '../products/entities/product-variant.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderItem } from '../orders/entities/order-item.entity';
+import { Otp } from '../auth/entities/otp.entity';
+import { Wishlist } from '../wishlist/entities/wishlist.entity';
+import { Payment } from '../payments/entities/payment.entity';
 import { SeederService } from './seeder.service';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -18,24 +21,10 @@ dotenv.config();
     TypeOrmModule.forRootAsync({
       useFactory: (): TypeOrmModuleOptions => {
         const dbType = process.env.DB_TYPE || 'sqlite';
-        const entities = [User, Category, Product, ProductVariant, Order, OrderItem];
+        const entities = [User, Category, Product, ProductVariant, Order, OrderItem, Otp, Wishlist, Payment];
         const migrations = [path.join(__dirname, 'migrations', '*{.ts,.js}')];
 
-        if (dbType === 'postgres') {
-          return {
-            type: 'postgres',
-            host: process.env.DB_HOST,
-            port: parseInt(process.env.DB_PORT || '5432', 10),
-            username: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_DATABASE,
-            entities,
-            migrations,
-            migrationsRun: true,
-            synchronize: false,
-            logging: false,
-          } as unknown as TypeOrmModuleOptions;
-        } else if (dbType === 'mysql') {
+        if (dbType === 'mysql') {
           return {
             type: 'mysql',
             host: process.env.DB_HOST,

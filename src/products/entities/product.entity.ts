@@ -47,6 +47,12 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isCustomizable: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  customizationNote: string | null;
+
   @OneToMany(() => ProductVariant, (variant) => variant.product, { cascade: true })
   variants: ProductVariant[];
 

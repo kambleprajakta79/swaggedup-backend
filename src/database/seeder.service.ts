@@ -21,6 +21,11 @@ export class SeederService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    // Only run seeder in development or when explicitly enabled
+    if (process.env.NODE_ENV === 'production' && process.env.RUN_SEEDER !== 'true') {
+      console.log('Production environment detected. Skipping seeder. Set RUN_SEEDER=true to force.');
+      return;
+    }
     console.log('--- Starting Database Seeding Check ---');
     await this.seedAdmin();
     await this.seedCategoriesAndProducts();
@@ -36,9 +41,10 @@ export class SeederService implements OnApplicationBootstrap {
         email: 'admin@swaggedup.com',
         password: hashedPassword,
         role: 'ADMIN',
+        isVerified: true,
       });
       await this.userRepository.save(admin);
-      console.log('Admin user seeded: admin@swaggedup.com / admin123');
+      console.log('Admin user seeded: admin@swaggedup.com');
     }
   }
 

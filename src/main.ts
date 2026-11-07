@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/http-exception.filter';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { json, urlencoded } from 'express';
 
@@ -10,7 +11,8 @@ dotenv.config();
 
 async function bootstrap() {
   // Disable default bodyParser to allow dynamic limit middleware
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  // rawBody: true captures the raw request body for webhook signature verification (Razorpay)
+  const app = await NestFactory.create(AppModule, { bodyParser: false, rawBody: true });
   
   // Apply dynamic body parsing limits to secure unrelated endpoints
   app.use((req: any, res: any, next: any) => {
@@ -23,8 +25,9 @@ async function bootstrap() {
   });
 
   // Enable CORS for frontend connection
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:4200';
   app.enableCors({
-    origin: '*', // Allow all origins for dev simplicity
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -41,7 +44,24 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`Backend server running on http://localhost:${port}`);
+
+  // Swagger API documentation (all non-production environments)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('SwaggedUp API')
+      .setDescription('SwaggedUp menswear e-commerce API')
+      .setVersion('1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
+        'JWT-auth',
+      )
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+    console.log(`Swagger documentation available at http://localhost:${port}/api/docs`);
+  }
+
+  await app.listen(port, '0.0.0.0');
+  console.log(`Backend server running on port ${port}`);
 }
 bootstrap();

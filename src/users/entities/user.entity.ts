@@ -13,8 +13,17 @@ export class User {
   @Exclude() // Ensure password is never serialized in JSON responses
   password: string;
 
-  @Column({ default: 'ADMIN' })
+  @Column({ default: 'CUSTOMER' })
   role: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone: string | null;
+
+  @Column({ default: false })
+  isVerified: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

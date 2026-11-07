@@ -57,6 +57,14 @@ export class UpdateProductDto {
   isActive?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  isCustomizable?: boolean;
+
+  @IsOptional()
+  @IsString()
+  customizationNote?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateProductVariantDto)

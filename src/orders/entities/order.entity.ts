@@ -70,7 +70,10 @@ export class Order {
   paymentStatus: PaymentStatus;
 
   @Column({ default: 'COD' })
-  paymentMethod: string; // COD, Card, etc.
+  paymentMethod: string; // COD, ONLINE, etc.
+
+  @Column({ type: 'int', nullable: true })
+  userId: number | null; // Linked customer account (null for guest orders)
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
