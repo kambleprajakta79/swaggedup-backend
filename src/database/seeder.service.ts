@@ -5,6 +5,7 @@ import { User } from '../users/entities/user.entity';
 import { Category } from '../categories/entities/category.entity';
 import { Product } from '../products/entities/product.entity';
 import { ProductVariant } from '../products/entities/product-variant.entity';
+import { Banner } from '../banners/entities/banner.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -18,6 +19,8 @@ export class SeederService implements OnApplicationBootstrap {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductVariant)
     private readonly variantRepository: Repository<ProductVariant>,
+    @InjectRepository(Banner)
+    private readonly bannerRepository: Repository<Banner>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -29,6 +32,7 @@ export class SeederService implements OnApplicationBootstrap {
     console.log('--- Starting Database Seeding Check ---');
     await this.seedAdmin();
     await this.seedCategoriesAndProducts();
+    await this.seedBanners();
     console.log('--- Database Seeding Complete ---');
   }
 
@@ -90,7 +94,7 @@ export class SeederService implements OnApplicationBootstrap {
         color: 'Midnight Blue',
         images: [
           'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1555069519-03000b2f58b5?q=80&w=800&auto=format&fit=crop'
+          'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop'
         ],
         isFeatured: true,
         isNewArrival: false,
@@ -211,7 +215,7 @@ export class SeederService implements OnApplicationBootstrap {
         material: 'Wool Silk Blend',
         color: 'Charcoal Grey',
         images: [
-          'https://images.unsplash.com/photo-1555069519-03000b2f58b5?q=80&w=800&auto=format&fit=crop'
+          'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop'
         ],
         isFeatured: false,
         isNewArrival: false,
@@ -361,7 +365,7 @@ export class SeederService implements OnApplicationBootstrap {
         material: 'Grained Calfskin Leather',
         color: 'Black',
         images: [
-          'https://images.unsplash.com/photo-1624222247344-550fb8ecf7c4?q=80&w=800&auto=format&fit=crop'
+          'https://images.unsplash.com/photo-1611651338412-8403fa6e3599?q=80&w=800&auto=format&fit=crop'
         ],
         isFeatured: false,
         isNewArrival: false,
@@ -376,7 +380,7 @@ export class SeederService implements OnApplicationBootstrap {
         material: '100% Extra-fine Merino Wool',
         color: 'Heather Grey',
         images: [
-          'https://images.unsplash.com/photo-1520903928273-0f44b2a2eed5?q=80&w=800&auto=format&fit=crop'
+          'https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?q=80&w=800&auto=format&fit=crop'
         ],
         isFeatured: false,
         isNewArrival: true,
@@ -433,5 +437,47 @@ export class SeederService implements OnApplicationBootstrap {
     }
 
     console.log('Seeded 20 premium menswear products with corresponding size-wise variants.');
+  }
+
+  private async seedBanners() {
+    const bannerCount = await this.bannerRepository.count();
+    if (bannerCount > 0) {
+      return;
+    }
+
+    console.log('Seeding homepage banners...');
+
+    const bannersData = [
+      {
+        title: 'DEFINE YOUR STYLE. OWN THE LOOK.',
+        subtitle: 'Premium menswear crafted for the modern gentleman',
+        image: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1600&auto=format&fit=crop',
+        link: '/shop',
+        sortOrder: 1,
+        isActive: true,
+      },
+      {
+        title: 'FESTIVE SEASON SALE',
+        subtitle: 'Up to 40% off on shirts, tees and knitwear',
+        image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1600&auto=format&fit=crop',
+        link: '/shop',
+        sortOrder: 2,
+        isActive: true,
+      },
+      {
+        title: 'NEW ARRIVALS',
+        subtitle: 'Fresh drops from the latest collection',
+        image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=1600&auto=format&fit=crop',
+        link: '/shop',
+        sortOrder: 3,
+        isActive: true,
+      },
+    ];
+
+    for (const bData of bannersData) {
+      const banner = this.bannerRepository.create(bData);
+      await this.bannerRepository.save(banner);
+    }
+    console.log('Seeded 3 homepage banners.');
   }
 }

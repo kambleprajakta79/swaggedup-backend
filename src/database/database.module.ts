@@ -9,6 +9,7 @@ import { OrderItem } from '../orders/entities/order-item.entity';
 import { Otp } from '../auth/entities/otp.entity';
 import { Wishlist } from '../wishlist/entities/wishlist.entity';
 import { Payment } from '../payments/entities/payment.entity';
+import { Banner } from '../banners/entities/banner.entity';
 import { SeederService } from './seeder.service';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -21,7 +22,7 @@ dotenv.config();
     TypeOrmModule.forRootAsync({
       useFactory: (): TypeOrmModuleOptions => {
         const dbType = process.env.DB_TYPE || 'sqlite';
-        const entities = [User, Category, Product, ProductVariant, Order, OrderItem, Otp, Wishlist, Payment];
+        const entities = [User, Category, Product, ProductVariant, Order, OrderItem, Otp, Wishlist, Payment, Banner];
         const migrations = [path.join(__dirname, 'migrations', '*{.ts,.js}')];
 
         if (dbType === 'mysql') {
@@ -51,7 +52,7 @@ dotenv.config();
         }
       },
     }),
-    TypeOrmModule.forFeature([User, Category, Product, ProductVariant]),
+    TypeOrmModule.forFeature([User, Category, Product, ProductVariant, Banner]),
   ],
   providers: [SeederService],
   exports: [TypeOrmModule],

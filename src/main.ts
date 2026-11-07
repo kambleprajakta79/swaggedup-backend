@@ -5,6 +5,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import { json, urlencoded } from 'express';
+import helmet from 'helmet';
 
 // Load environment variables
 dotenv.config();
@@ -15,19 +16,28 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false, rawBody: true });
   
   // Apply dynamic body parsing limits to secure unrelated endpoints
+  // /products, /banners and /categories accept base64 image payloads
+  const isImageEndpoint = (path: string) =>
+    path.includes('/products') || path.includes('/banners') || path.includes('/categories');
   app.use((req: any, res: any, next: any) => {
-    const limit = req.path.includes('/products') ? '20mb' : '100kb';
+    const limit = isImageEndpoint(req.path) ? '20mb' : '100kb';
     json({ limit })(req, res, next);
   });
   app.use((req: any, res: any, next: any) => {
-    const limit = req.path.includes('/products') ? '20mb' : '100kb';
+    const limit = isImageEndpoint(req.path) ? '20mb' : '100kb';
     urlencoded({ limit, extended: true })(req, res, next);
   });
 
-  // Enable CORS for frontend connection
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:4200';
+  // Security headers
+  app.use(helmet());
+
+  // Enable CORS for frontend connection (supports multiple origins, comma-separated)
+  const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: corsOrigin,
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -62,6 +72,6 @@ async function bootstrap() {
   }
 
   await app.listen(port, '0.0.0.0');
-  console.log(`Backend server running on port ${port}`);
+  console.log(`Backend server running on port ${port} [NODE_ENV=${process.env.NODE_ENV || 'development'}]`);
 }
 bootstrap();

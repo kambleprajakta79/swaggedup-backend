@@ -8,6 +8,7 @@ import { OrderItem } from '../orders/entities/order-item.entity';
 import { Otp } from '../auth/entities/otp.entity';
 import { Wishlist } from '../wishlist/entities/wishlist.entity';
 import { Payment } from '../payments/entities/payment.entity';
+import { Banner } from '../banners/entities/banner.entity';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -16,7 +17,7 @@ dotenv.config();
 
 const dbType = process.env.DB_TYPE || 'sqlite';
 
-const entities = [User, Category, Product, ProductVariant, Order, OrderItem, Otp, Wishlist, Payment];
+const entities = [User, Category, Product, ProductVariant, Order, OrderItem, Otp, Wishlist, Payment, Banner];
 
 export const AppDataSource = new DataSource(
   dbType === 'mysql'

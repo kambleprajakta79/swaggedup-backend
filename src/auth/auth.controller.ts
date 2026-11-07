@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -17,6 +18,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email and password (admin or customer)' })
   @ApiOkResponse({ description: 'Returns JWT access token' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @Throttle({ default: { ttl: 60_000, limit: 10 } }) // 10 login attempts/min per IP
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -24,6 +26,7 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Register a customer account (sends OTP email)' })
   @ApiConflictResponse({ description: 'Account already exists and is verified' })
+  @Throttle({ default: { ttl: 60_000, limit: 5 } }) // 5 registrations/min per IP
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
